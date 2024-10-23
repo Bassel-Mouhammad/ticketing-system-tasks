@@ -4,6 +4,9 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use App\Models\User;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+Use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class Ticket extends Model
 {
@@ -22,7 +25,6 @@ class Ticket extends Model
     }
 
 
-    // In App\Models\Ticket.php
 
 public function assignedUsers()
 {

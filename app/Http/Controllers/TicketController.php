@@ -7,11 +7,17 @@ use App\Models\User;
 use App\Models\Status;
 use Illuminate\Http\Request;
 
+
 class TicketController extends Controller
 {
     public function index()
     {
-        $tickets = Ticket::with('status', 'user', 'assignedUsers')->get();
+        // Fetch all tickets sorted by the creation date (latest first)
+        $tickets = Ticket::with('status', 'user', 'assignedUsers')
+            ->orderBy('created_at', 'desc') // Sort by created_at in descending order
+            ->get();
+
+
         return view('tickets.index', compact('tickets'));
     }
 
@@ -37,10 +43,20 @@ class TicketController extends Controller
         return redirect()->route('tickets.index')->with('success', 'Ticket created successfully.');
     }
 
-    public function show(Ticket $ticket)
+    public function show($id)
     {
+        // Retrieve the ticket by ID, including relationships
+        $ticket = Ticket::with('status', 'user', 'assignedUsers')->find($id);
+
+        // Check if the ticket exists
+        if (!$ticket) {
+            return redirect()->route('tickets.index')->with('error', 'Ticket not found');
+        }
+
+        // Return the view with the ticket data
         return view('tickets.show', compact('ticket'));
     }
+
 
     public function edit(Ticket $ticket)
     {

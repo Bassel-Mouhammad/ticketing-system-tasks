@@ -16,7 +16,9 @@ return new class extends Migration
             // Only add the 'user_id' column if it doesn't exist
             if (!Schema::hasColumn('tickets', 'user_id')) {
                 $table->foreignId('user_id')
+                    ->default(1)
                     ->constrained('users')
+                    ->onUpdate('cascade')
                     ->onDelete('cascade');
             }
         });
@@ -29,8 +31,10 @@ return new class extends Migration
     {
         Schema::table('tickets', function (Blueprint $table) {
             // Drop the foreign key and the column if rolled back
-            // $table->dropForeign(['user_id']);
-            $table->dropColumn('user_id');
+            if (Schema::hasColumn('tickets', 'user_id')) {
+                $table->dropForeign(['user_id']); // Drop foreign key constraint
+                $table->dropColumn('user_id'); // Drop the user_id column
+            }
         });
     }
 };
