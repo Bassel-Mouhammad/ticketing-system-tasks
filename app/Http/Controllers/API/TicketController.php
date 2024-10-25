@@ -9,6 +9,7 @@ use Illuminata\Response;
 use App\http\controllers\API\Exception;
 use Exception as GlobalException;
 
+
 class TicketController extends Controller
 {
     /**
@@ -50,7 +51,7 @@ class TicketController extends Controller
             $ticket->save();
 
             // Sync assigned users
-            $ticket->assignedUsers()->sync($data['assigned_users'] ?? []);
+            // $ticket->assignedUsers()->sync($data['assigned_users'] ?? []);
 
             return response()->json([
                 "msg" => "Ticket created successfully",
