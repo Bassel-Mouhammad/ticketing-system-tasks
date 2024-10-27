@@ -5,10 +5,8 @@ namespace App\Http\Controllers\API;
 use App\Models\Ticket;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
-use Illuminata\Response;
-use App\http\controllers\API\Exception;
-use Exception as GlobalException;
-
+use Illuminate\Http\Response;
+use Exception;
 
 class TicketController extends Controller
 {
@@ -23,14 +21,14 @@ class TicketController extends Controller
             return response()->json([
                 "msg" => "All data retrieved successfully",
                 "success" => true,
-                "data " => $tickets
-            ], 200);
-        } catch (GlobalException $e) {
+                "data" => $tickets
+            ], Response::HTTP_OK);
+        } catch (Exception $e) {
             return response()->json([
                 "msg" => $e->getMessage(),
                 "success" => false,
                 "data" => []
-            ]);
+            ], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
 
@@ -40,52 +38,62 @@ class TicketController extends Controller
     public function store(Request $request)
     {
         try {
-            $data = $request->all();
-            $ticket = new Ticket();
-            $ticket->title = $data['title'];
-            $ticket->description = $data['description'];
-            $ticket->status_id = $data['status_id'];
-            $ticket->deadline = $data['deadline'];
-            $ticket->assigned_user_id = $data['assigned_user_id'];
-            $ticket->user_id = $data['user_id'];
-            $ticket->save();
+            // Validate incoming request data
+            $data = $request->validate([
+                'title' => 'required|string|max:255',
+                'description' => 'required|string',
+                'status_id' => 'required|exists:statuses,id',
+                'user_id' => 'required|exists:users,id',
+                'assigned_users' => 'array', // Optional: ensure it's an array if present
+                'assigned_users.*' => 'exists:users,id', // Ensure each user ID is valid
+                'deadline' => 'nullable|date',
+            ]);
+
+            // Create a new ticket
+            $ticket = Ticket::create([
+                'title' => $data['title'],
+                'description' => $data['description'],
+                'status_id' => $data['status_id'],
+                'user_id' => $data['user_id'],
+                'deadline' => $data['deadline'],
+            ]);
 
             // Sync assigned users
-            // $ticket->assignedUsers()->sync($data['assigned_users'] ?? []);
+            $ticket->assignedUsers()->sync($data['assigned_users'] ?? []);
 
             return response()->json([
                 "msg" => "Ticket created successfully",
                 "success" => true,
-                "data " => $ticket
-            ], 201);
-        } catch (GlobalException $e) {
+                "data" => $ticket
+            ], Response::HTTP_CREATED);
+        } catch (Exception $e) {
             return response()->json([
                 "msg" => $e->getMessage(),
                 "success" => false,
                 "data" => []
-            ], 500);
+            ], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
-
 
     // Method to get a specific ticket by ID
     public function show($id)
     {
-        // Find the ticket by ID or return a 404 error if not found
-        $ticket = Ticket::with('status', 'user', 'assignedUsers')->find($id);
+        try {
+            // Find the ticket by ID or return a 404 error if not found
+            $ticket = Ticket::with('status', 'user', 'assignedUsers')->findOrFail($id);
 
-        if (!$ticket) {
+            // Return the ticket data as JSON
+            return response()->json([
+                'success' => true,
+                'data' => $ticket
+            ]);
+        } catch (Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Ticket not found'
-            ], 404);
+                'message' => 'Ticket not found',
+                'error' => $e->getMessage()
+            ], Response::HTTP_NOT_FOUND);
         }
-
-        // Return the ticket data as JSON
-        return response()->json([
-            'success' => true,
-            'data' => $ticket
-        ]);
     }
 
     /**
@@ -97,39 +105,57 @@ class TicketController extends Controller
             // Find the ticket by ID or return a 404 error if not found
             $ticket = Ticket::findOrFail($id);
 
-            // Update ticket properties directly from the request
-            $ticket->title = $request->title;
-            $ticket->description = $request->description;
-            $ticket->status_id = $request->status_id;
-            $ticket->assigned_user_id = $request->assigned_user_id; // This can be null
-            $ticket->deadline = $request->deadline;
+            // Validate incoming request data
+            $data = $request->validate([
+                'title' => 'sometimes|required|string|max:255',
+                'description' => 'sometimes|required|string',
+                'status_id' => 'sometimes|required|exists:statuses,id',
+                'assigned_users' => 'array',
+                'assigned_users.*' => 'exists:users,id',
+                'deadline' => 'sometimes|nullable|date',
+            ]);
 
-            // Save the updated ticket
-            $ticket->save();
+            // Update ticket properties if provided
+            $ticket->update(array_filter($data)); // Only update fields that are not null
 
+            // Sync assigned users
+            if (isset($data['assigned_users'])) {
+                $ticket->assignedUsers()->sync($data['assigned_users']);
+            }
 
             // Return a successful response with the updated ticket
             return response()->json([
                 "msg" => "Ticket updated successfully",
                 "success" => true,
                 "data" => $ticket
-            ], 200);
-        } catch (\Exception $e) {
-            // Handle any exceptions and return an error message
+            ], Response::HTTP_OK);
+        } catch (Exception $e) {
             return response()->json([
                 "msg" => $e->getMessage(),
                 "success" => false,
                 "data" => []
-            ], 500);
+            ], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
-
 
     /**
      * Remove the specified resource from storage.
      */
     public function destroy(string $id)
     {
-        //
+        try {
+            $ticket = Ticket::findOrFail($id);
+            $ticket->delete();
+
+            return response()->json([
+                "msg" => "Ticket deleted successfully",
+                "success" => true
+            ], Response::HTTP_OK);
+        } catch (Exception $e) {
+            return response()->json([
+                "msg" => $e->getMessage(),
+                "success" => false
+            ], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
     }
 }

@@ -6,7 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-Use Illuminate\Database\Eloquent\Relations\HasOne;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class Ticket extends Model
 {
@@ -17,7 +17,6 @@ class Ticket extends Model
     public function status()
     {
         return $this->belongsTo(Status::class);
-
     }
     public function user()
     {
@@ -26,9 +25,8 @@ class Ticket extends Model
 
 
 
-public function assignedUsers()
-{
-    return $this->belongsToMany(User::class, 'ticket_user', 'ticket_id', 'user_id');
-}
-
+    public function assignedUsers()
+    {
+        return $this->belongsToMany(User::class, 'assigned_user_ticket', 'ticket_id', 'user_id');
+    }
 }
