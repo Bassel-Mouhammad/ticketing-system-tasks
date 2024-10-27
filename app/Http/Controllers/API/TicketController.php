@@ -12,6 +12,7 @@ class TicketController extends Controller
 {
     /**
      * Display a listing of the resource.
+     * hello world
      */
     public function index()
     {
