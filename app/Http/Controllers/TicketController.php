@@ -12,7 +12,9 @@ class TicketController extends Controller
     public function index()
     {
         // Fetch all tickets sorted by the creation date (latest first)
-        $tickets = Ticket::with('status', 'user')->orderBy('created_at', 'desc')->get();
+        $tickets = Ticket::with(['status', 'user', 'assignedUsers'])
+            ->orderBy('created_at', 'desc')
+            ->get();
 
         // Categorize tickets by status
         $openTickets = $tickets->where('status_id', 1); // Assuming 1 is for Open
@@ -21,6 +23,8 @@ class TicketController extends Controller
 
         return view('tickets.index', compact('openTickets', 'inProgressTickets', 'closedTickets'));
     }
+
+
 
 
     public function create()

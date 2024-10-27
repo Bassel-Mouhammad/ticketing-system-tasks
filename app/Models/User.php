@@ -8,12 +8,12 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
-
+use laravel\sanctum\HasApiTokens;
 
 class User extends Authenticatable
 {
 
-    use HasFactory, Notifiable;
+    use HasFactory, Notifiable, HasApiTokens;
 
     // Define the inverse relationship for the tickets a user has created
     public function tickets()
@@ -59,5 +59,4 @@ class User extends Authenticatable
     {
         return $this->belongsToMany(Ticket::class, 'ticket_user', 'user_id', 'ticket_id');
     }
-
 }
