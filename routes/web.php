@@ -9,12 +9,14 @@ Route::get('/', function () {
     return view('welcome');
 });
 
+// Redirect any access to /login to /auth/login
+Route::redirect('/login', '/auth/login');
 
 // Protected ticket routes: Only accessible by authenticated users
-Route::middleware('auth')->group(function () {
-    Route::get('/tickets', [TicketController::class, "index"])->name('tickets.index');
-    Route::resource('tickets', TicketController::class)->except(['index']);
-});
+
+Route::get('/tickets', [TicketController::class, "index"])->name('tickets.index');
+Route::resource('tickets', TicketController::class)->except(['index']);
+
 
 // Authentication routes (public)
 Route::prefix('auth')->group(function () {

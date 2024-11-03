@@ -12,24 +12,27 @@ class TicketController extends Controller
 {
     public function index()
     {
-        // Fetch all tickets sorted by the creation date (latest first)
+        if (!Auth::check()) {
+            return redirect()->route('auth.login');
+        }
+
         $tickets = Ticket::with(['status', 'user', 'assignedUsers'])
             ->orderBy('created_at', 'desc')
             ->get();
 
-        // Categorize tickets by status
-        $openTickets = $tickets->where('status_id', 1); // Assuming 1 is for Open
-        $inProgressTickets = $tickets->where('status_id', 2); // Assuming 2 is for In Progress
-        $closedTickets = $tickets->where('status_id', 3); // Assuming 3 is for Closed
+        $openTickets = $tickets->where('status_id', 1);
+        $inProgressTickets = $tickets->where('status_id', 2);
+        $closedTickets = $tickets->where('status_id', 3);
 
         return view('tickets.index', compact('openTickets', 'inProgressTickets', 'closedTickets'));
     }
 
-
-
-
     public function create()
     {
+        if (!Auth::check()) {
+            return redirect()->route('auth.login');
+        }
+
         $statuses = Status::all();
         $users = User::all();
         return view('tickets.create', compact('statuses', 'users'));
@@ -37,20 +40,21 @@ class TicketController extends Controller
 
     public function store(Request $request)
     {
-        // Validate the incoming request data
+        if (!Auth::check()) {
+            return redirect()->route('auth.login');
+        }
+
         $validatedData = $request->validate([
             'title' => 'required|string|max:255',
             'description' => 'required|string',
             'status_id' => 'required|exists:statuses,id',
             'assigned_users' => 'array|nullable',
-            'assigned_users.*' => 'exists:users,id', // Validate each assigned user ID
+            'assigned_users.*' => 'exists:users,id',
             'deadline' => 'nullable|date',
         ]);
 
-        // Create the ticket
         $ticket = Ticket::create($validatedData);
 
-        // Attach assigned users if they exist
         if (isset($validatedData['assigned_users'])) {
             $ticket->assignedUsers()->sync($validatedData['assigned_users']);
         }
@@ -58,23 +62,27 @@ class TicketController extends Controller
         return redirect()->route('tickets.index')->with('success', 'Ticket created successfully.');
     }
 
-
     public function show($id)
     {
-        // Retrieve the ticket by ID, including relationships
+        if (!Auth::check()) {
+            return redirect()->route('auth.login');
+        }
+
         $ticket = Ticket::with('status', 'user', 'assignedUsers')->find($id);
 
-        // Check if the ticket exists
         if (!$ticket) {
             return redirect()->route('tickets.index')->with('error', 'Ticket not found');
         }
 
-        // Return the view with the ticket data
         return view('tickets.show', compact('ticket'));
     }
 
     public function edit(Ticket $ticket)
     {
+        if (!Auth::check()) {
+            return redirect()->route('auth.login');
+        }
+
         $statuses = Status::all();
         $users = User::all();
         return view('tickets.edit', compact('ticket', 'statuses', 'users'));
@@ -82,21 +90,21 @@ class TicketController extends Controller
 
     public function update(Request $request, Ticket $ticket)
     {
-        // Validate the incoming request data
+        if (!Auth::check()) {
+            return redirect()->route('auth.login');
+        }
+
         $validatedData = $request->validate([
             'title' => 'required|string|max:255',
             'description' => 'required|string',
             'status_id' => 'required|exists:statuses,id',
             'user_id' => 'required|exists:users,id',
-            'assigned_users' => 'array', // Allow multiple assigned users
-            'assigned_users.*' => 'exists:users,id', // Validate each assigned user ID
+            'assigned_users' => 'array',
+            'assigned_users.*' => 'exists:users,id',
             'deadline' => 'nullable|date',
         ]);
 
-        // Update the ticket properties
         $ticket->update($validatedData);
-
-        // Sync assigned users
         $ticket->assignedUsers()->sync($validatedData['assigned_users'] ?? []);
 
         return redirect()->route('tickets.index')->with('success', 'Ticket updated successfully.');
@@ -104,6 +112,10 @@ class TicketController extends Controller
 
     public function destroy(Ticket $ticket)
     {
+        if (!Auth::check()) {
+            return redirect()->route('auth.login');
+        }
+
         $ticket->delete();
 
         return redirect()->route('tickets.index')->with('success', 'Ticket deleted successfully.');
