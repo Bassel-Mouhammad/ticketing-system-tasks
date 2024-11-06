@@ -1,5 +1,7 @@
 <?php
 
+use Laravel\Sanctum\Sanctum;
+
 return [
 
     /*
@@ -40,6 +42,8 @@ return [
             'driver' => 'session',
             'provider' => 'users',
         ],
+        'api' => "sanctum",
+        'provider' => "users"
     ],
 
     /*
