@@ -13,5 +13,10 @@ Route::middleware('auth:api')->get('tickets', [TicketController::class, 'index']
 Route::post('tickets', [TicketController::class, 'store']);
 Route::get('tickets/{id}', [TicketController::class, 'show']);
 Route::put('tickets/{id}', [TicketController::class, 'update']);
+Route::delete('tickets/{id}', [TicketController::class, 'destroy']);
 
-// Route::post('auth/signup', [AuthController::class, 'signup']);
+Route::prefix("auth")->group(function () {
+    Route::post("signup", [AuthController::class, "signup"])->name("signup");
+    Route::post("login", [AuthController::class, "login"])->name("login");
+    Route::middleware("auth:sanctum")->post("/logout", [AuthController::class, 'logout']);
+});
